@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>Burrow Dash</title>
+<style>
+  html, body { margin: 0; padding: 0; background: #1a120b; }
+  canvas { display: block; width: 540px; height: 960px; }
+</style>
+</head>
+<body>
+<canvas id="game" width="540" height="960"></canvas>
+<script src="game.js"></script>
+<script>
+  // Interactive play: arrow keys / WASD move the mole (real game, playable).
+  // The video uses the scripted demo path instead, via __renderFrame.
+  const canvas = document.getElementById('game');
+  const ctx = canvas.getContext('2d');
+  const params = new URLSearchParams(location.search);
+  const build = params.get('build') || 'day7';
+  const state = makeGame(build);
+  const keys = {};
+  addEventListener('keydown', (e) => { keys[e.key.toLowerCase()] = true; });
+  addEventListener('keyup', (e) => { keys[e.key.toLowerCase()] = false; });
+  let last = performance.now();
+  function loop(now) {
+    const dt = Math.min(0.05, (now - last) / 1000);
+    last = now;
+    // Manual override: keys steer the mole instead of the scripted path.
+    const p = state.player;
+    const sp = 260 * dt;
+    state.manual = keys['arrowleft'] || keys['a'] || keys['arrowright'] || keys['d'] ||
+      keys['arrowup'] || keys['w'] || keys['arrowdown'] || keys['s'];
+    if (keys['arrowleft'] || keys['a']) p.x -= sp;
+    if (keys['arrowright'] || keys['d']) p.x += sp;
+    if (keys['arrowup'] || keys['w']) p.y -= sp;
+    if (keys['arrowdown'] || keys['s']) p.y += sp;
+    p.x = Math.max(50, Math.min(490, p.x));
+    p.y = Math.max(100, Math.min(870, p.y));
+    step(state, dt);
+    draw(state, ctx);
+    requestAnimationFrame(loop);
+  }
+  // Capture mode (?capture=1): no live loop — the capture driver calls
+  // __renderFrame(build, t) for each frame instead, so screenshots show
+  // exactly the game-time requested, with no loop redrawing over it.
+  if (!params.get('capture')) {
+    requestAnimationFrame(loop);
+  }
+</script>
+</body>
+</html>
